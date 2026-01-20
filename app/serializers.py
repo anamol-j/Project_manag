@@ -22,3 +22,21 @@ class UserSerializer(ModelSerializer):
         user.save()
 
         return user
+    
+class PassworedUpdateSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("password")
+        extra_kwargs = {
+            "is_active": {"read_only": True},
+            "email" : {"read_only" : True}
+        }
+    
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+        user = User(**validated_data)
+        user.is_active = True
+        user.set_password(password)
+        user.save()
+
+        return user
