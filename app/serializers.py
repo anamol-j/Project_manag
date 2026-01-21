@@ -26,17 +26,17 @@ class UserSerializer(ModelSerializer):
 class PassworedUpdateSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = ("password")
+        fields = ("id","username","password")
         extra_kwargs = {
             "is_active": {"read_only": True},
-            "email" : {"read_only" : True}
+            "email" : {"read_only" : True},
+            "username" : {"read_only" : True},
+            "password" : {"write_only":True}
         }
     
-    def create(self, validated_data):
+    def update(self, instance, validated_data):
         password = validated_data.pop("password")
-        user = User(**validated_data)
-        user.is_active = True
-        user.set_password(password)
-        user.save()
+        instance.set_password(password)
+        instance.save()
 
-        return user
+        return instance
