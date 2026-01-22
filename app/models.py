@@ -18,13 +18,11 @@ class Membership(models.Model):
     ROLE_OWNER = "owner"
     ROLE_ADMIN = "admin"
     ROLE_MEMBER = "member"
-    ROLE_VIEWER = "viewer"
 
     ROLE_CHOICES = (
         (ROLE_OWNER, "Owner"),
         (ROLE_ADMIN, "Admin"),
         (ROLE_MEMBER, "Member"),
-        (ROLE_VIEWER, "Viewer"),
     )
     user = models.ForeignKey(User,on_delete=models.CASCADE)
     organization = models.ForeignKey(Organization,on_delete=models.CASCADE)

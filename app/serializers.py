@@ -78,7 +78,7 @@ class OrganizationSerializer(ModelSerializer):
     
 class InviteMemberSerializer(serializers.Serializer):
     user_id = serializers.IntegerField()
-    role = serializers.ChoiceField(choices=["admin", "member"])
+    role = serializers.ChoiceField(choices=["admin", "member"], default="member", required=False)
 
     def validate_user_id(self,value):
         if not User.objects.filter(id=value).exists():
