@@ -1,5 +1,5 @@
 from rest_framework.viewsets import ModelViewSet
-from .permission import IsOrganizationAdmin
+from .permissions import OrganizationRolePermission
 from rest_framework.decorators import action
 from .serializers import (
     UserSerializer,
@@ -67,7 +67,7 @@ class PassworedUpdateAPI(ModelViewSet):
         })
     
 class OrganizationViewSetAPI(ModelViewSet):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated,OrganizationRolePermission]
     serializer_class = OrganizationSerializer
 
     def get_queryset(self):
@@ -75,7 +75,9 @@ class OrganizationViewSetAPI(ModelViewSet):
         if user.is_staff or user.is_superuser:
             return Organization.objects.all()
 
-        return Organization.objects.filter(owner = user)
+        return Organization.objects.filter(
+            membership__user=user
+        ).distinct()
     
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -109,21 +111,48 @@ class OrganizationViewSetAPI(ModelViewSet):
     
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
+        print("partial",partial)
         instance = self.get_object()
 
-        if request.data['name'] == instance.name:
+        if request.data.get("name") == instance.name:
             return Response({
-                "massage" : "Organization name should different from previews one",
+                "message": "Organization name must be different for PUT",
                 "status": status.HTTP_400_BAD_REQUEST
-            })
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
         serializer = self.get_serializer(instance, data=request.data,partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
         return Response({
-            "massage" : "Updated",
-            "status": status.HTTP_200_OK
-        })
+            "message": "Organization fully updated (PUT)",
+            "status": status.HTTP_200_OK,
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+        
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # Custom PATCH-only rule
+        if "owner" in request.data:
+            return Response({
+                "message": "Owner cannot be changed using PATCH",
+                "status": status.HTTP_400_BAD_REQUEST
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=True   # IMPORTANT
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response({
+            "message": "Organization partially updated (PATCH)",
+            "status": status.HTTP_200_OK,
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         try:
@@ -141,10 +170,9 @@ class OrganizationViewSetAPI(ModelViewSet):
             "status": 200
         }, status=status.HTTP_200_OK)
     
-    @action(detail=True, methods=["post"], permission_classes=[IsOrganizationAdmin])
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, OrganizationRolePermission])
     def invite(self, request, pk=None):
         organization = self.get_object()
-        print(organization)
         serializer = InviteMemberSerializer(
             data=request.data,
             context={"organization": organization}
@@ -154,7 +182,7 @@ class OrganizationViewSetAPI(ModelViewSet):
         Membership.objects.create(
             user_id = serializer.validated_data['user_id'],
             organization = organization,
-            role = serializer.validated_data['role']
+            role = serializer.validated_data.get('role', 'member')
         )
 
         return Response({

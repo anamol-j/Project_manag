@@ -11,7 +11,7 @@ from .models import (
 class UserSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = ("username", "email", "password")
+        fields = ("id", "username", "email", "password")
         extra_kwargs = {
             "is_active": {"read_only": True}
         }
