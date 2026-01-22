@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 
 class Organization(models.Model):
     name = models.CharField(max_length=50)
+    description = models.TextField(blank=True)
     owner = models.ForeignKey(User,on_delete=models.CASCADE,related_name="owner_organizations")
     members = models.ManyToManyField(
         User,

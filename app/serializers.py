@@ -1,7 +1,13 @@
-from django.contrib.auth.models import User
+from django.utils import timezone
 from rest_framework.serializers import ModelSerializer
 from rest_framework import serializers
-
+from django.contrib.auth.models import User
+from .models import (
+    Membership,
+    Organization,
+    Project,
+    Task
+)
 class UserSerializer(ModelSerializer):
     class Meta:
         model = User
@@ -40,3 +46,32 @@ class PassworedUpdateSerializer(ModelSerializer):
         instance.save()
 
         return instance
+    
+class OrganizationSerializer(ModelSerializer):
+    class Meta:
+        model = Organization
+        fields = ("id", "name", "description")
+        read_only_fields = ("id",)
+
+    def validate_name(self, value):
+        if Organization.objects.filter(name=value).exists():
+            raise serializers.ValidationError("Organization with this name already exists.")
+        return value
+
+    def create(self, validated_data):
+        request = self.context['request']
+        user = request.user
+
+        organization = Organization.objects.create(
+            owner = user,
+            **validated_data
+        )
+
+        Membership.objects.create(
+            user = request.user,
+            organization = organization,
+            role='owner', 
+            joined_at=timezone.now()
+        )
+
+        return organization
