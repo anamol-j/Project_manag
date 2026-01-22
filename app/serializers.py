@@ -97,3 +97,8 @@ class InviteMemberSerializer(serializers.Serializer):
             )
 
         return attrs
+    
+class MembershipsSerializer(ModelSerializer):
+    class Meta:
+        model = Membership
+        fields = ("role",)

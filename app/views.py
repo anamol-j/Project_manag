@@ -5,7 +5,8 @@ from .serializers import (
     UserSerializer,
     PassworedUpdateSerializer,
     OrganizationSerializer,
-    InviteMemberSerializer
+    InviteMemberSerializer,
+    MembershipsSerializer
 )
 from .models import (
     Membership,
@@ -159,3 +160,17 @@ class OrganizationViewSetAPI(ModelViewSet):
             "message": "User invited successfully",
             "status": status.HTTP_201_CREATED
         }, status=status.HTTP_201_CREATED)
+    
+class MembershipsViewSetAPI(ModelViewSet):
+    permission_classes = [IsAdminUser]
+    serializer_class = MembershipsSerializer
+    queryset = Membership.objects.all()
+
+    def destroy(self, request, *args, **kwargs):
+        membership = self.get_object()
+        self.perform_destroy(membership)
+
+        return Response({
+            "message": "Member removed successfully",
+            "status": status.HTTP_200_OK
+        })
