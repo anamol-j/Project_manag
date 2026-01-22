@@ -75,3 +75,25 @@ class OrganizationSerializer(ModelSerializer):
         )
 
         return organization
+    
+class InviteMemberSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()
+    role = serializers.ChoiceField(choices=["admin", "member"])
+
+    def validate_user_id(self,value):
+        if not User.objects.filter(id=value).exists():
+            raise serializers.ValidationError("User does not exist.")
+        return value
+    
+    def validate(self, attrs):
+        org = self.context["organization"]
+
+        if Membership.objects.filter(
+            user_id=attrs["user_id"],
+            organization = org
+        ).exists():
+            raise serializers.ValidationError(
+                "User is already a member of this organization."
+            )
+
+        return attrs

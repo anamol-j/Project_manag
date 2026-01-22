@@ -1,8 +1,11 @@
 from rest_framework.viewsets import ModelViewSet
+from .permission import IsOrganizationAdmin
+from rest_framework.decorators import action
 from .serializers import (
     UserSerializer,
     PassworedUpdateSerializer,
-    OrganizationSerializer
+    OrganizationSerializer,
+    InviteMemberSerializer
 )
 from .models import (
     Membership,
@@ -135,3 +138,24 @@ class OrganizationViewSetAPI(ModelViewSet):
             "message": "Deleted successfully",
             "status": 200
         }, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=["post"], permission_classes=[IsOrganizationAdmin])
+    def invite(self, request, pk=None):
+        organization = self.get_object()
+        print(organization)
+        serializer = InviteMemberSerializer(
+            data=request.data,
+            context={"organization": organization}
+        )
+        serializer.is_valid(raise_exception=True)
+        
+        Membership.objects.create(
+            user_id = serializer.validated_data['user_id'],
+            organization = organization,
+            role = serializer.validated_data['role']
+        )
+
+        return Response({
+            "message": "User invited successfully",
+            "status": status.HTTP_201_CREATED
+        }, status=status.HTTP_201_CREATED)
