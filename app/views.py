@@ -6,7 +6,8 @@ from .serializers import (
     PassworedUpdateSerializer,
     OrganizationSerializer,
     InviteMemberSerializer,
-    MembershipsSerializer
+    MembershipsSerializer,
+    ProjectSerializer
 )
 from .models import (
     Membership,
@@ -174,3 +175,17 @@ class MembershipsViewSetAPI(ModelViewSet):
             "message": "Member removed successfully",
             "status": status.HTTP_200_OK
         })
+class ProjectViewSetAPI(ModelViewSet):
+    permission_classes = [IsAdminUser]
+    serializer_class = ProjectSerializer
+    queryset = Project.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        return Response({
+            "message": "Project added successfully",
+            "data" : serializer.data
+        },status.HTTP_201_CREATED)

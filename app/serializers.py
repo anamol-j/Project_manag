@@ -102,3 +102,22 @@ class MembershipsSerializer(ModelSerializer):
     class Meta:
         model = Membership
         fields = ("role",)
+
+class ProjectSerializer(ModelSerializer):
+    class Meta:
+        model = Project
+        fields = (
+            "id",
+            "title",
+            "description",
+            "organization",
+        )
+        read_only_fields = ("id", "created_by")
+
+    def create(self, validated_data):
+        request = self.context["request"]
+
+        return Project.objects.create(
+            created_by=request.user,
+            **validated_data
+        )
