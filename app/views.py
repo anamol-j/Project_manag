@@ -5,7 +5,8 @@ from django.http import Http404
 from rest_framework.decorators import action
 from .permissions import (
     OrganizationRolePermission,
-    ProjectRolePermission
+    ProjectRolePermission,
+    TaskRolePermission
 )
 from .serializers import (
     UserSerializer,
@@ -13,7 +14,9 @@ from .serializers import (
     OrganizationSerializer,
     InviteMemberSerializer,
     MembershipsSerializer,
-    ProjectSerializer
+    ProjectSerializer,
+    TaskCreateSerializer,
+    TaskSerializer
 )
 from .models import (
     Membership,
@@ -233,3 +236,33 @@ class ProjectViewSetAPI(ModelViewSet):
             "message": "Project added successfully",
             "data" : serializer.data
         },status.HTTP_201_CREATED)
+    
+class TaskViewSetAPI(ModelViewSet):
+    permission_classes = [TaskRolePermission]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if not user.is_authenticated:
+            return Task.objects.none()
+        
+        return (
+            Task.objects
+            .filter(
+                project__organization__membership__user=user
+            )
+            .select_related(
+                "project",
+                "project__organization",
+                "assignee",
+            )
+            .prefetch_related(
+                "subtasks"
+            )
+            .distinct()
+        )
+    
+    def get_serializer_class(self):
+        if self.action == "create":
+            return TaskCreateSerializer
+        return TaskSerializer

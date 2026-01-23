@@ -121,3 +121,74 @@ class ProjectSerializer(ModelSerializer):
             created_by=request.user,
             **validated_data
         )
+    
+class TaskCreateSerializer(ModelSerializer):
+    class Meta:
+        model = Task
+        fields = "__all__"
+
+    def validate_project(self, project):
+        user = self.context["request"].user
+
+        if not Membership.objects.filter(
+            user = user,
+            organization = project.organization
+        ).exists():
+            raise serializers.ValidationError(
+                "Project does not belong to your organization."
+            )
+
+        return project
+    
+    def validate_assignee(self, assignee):
+        if not assignee:
+            return assignee
+        
+        user = self.context["request"].user
+        project = self.initial_data.get("project")
+
+        if not project:
+            return assignee
+        
+        if not Membership.objects.filter(
+            user=assignee,
+            organization_id=project
+        ).exists():
+            raise serializers.ValidationError(
+                "Assignee must belong to the same organization."
+            )
+
+        return assignee
+    
+    def validate_parent(self, parent):
+        if not parent:
+            return parent
+
+        project_id = self.initial_data.get("project")
+
+        if parent.project_id != int(project_id):
+            raise serializers.ValidationError(
+                "Parent task must belong to the same project."
+            )
+
+        return parent
+    
+class TaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = [
+            "id",
+            "title",
+            "description",
+            "project",
+            "assignee",
+            "status",
+            "priority",
+            "parent",
+            "due_date",
+            "created_at",
+        ]
+        read_only_fields = [
+            "id",
+            "created_at",
+        ]

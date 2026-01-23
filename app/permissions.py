@@ -1,7 +1,7 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 from .models import (
     Membership,
-    Project
+    Task
 )
 
 class OrganizationRolePermission(BasePermission):
@@ -84,3 +84,42 @@ class ProjectRolePermission(BasePermission):
                 Membership.ROLE_OWNER,
                 Membership.ROLE_ADMIN
             ]
+    
+class TaskRolePermission(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated
+    
+    def has_object_permission(self, request, view, obj: Task):
+        user = request.user
+
+        membership = Membership.objects.filter(
+            user=user,
+            organization=obj.project.organization
+        ).first()
+
+        if not membership:
+            return False
+        
+        role = membership.role
+
+        if request.method in SAFE_METHODS:
+            return True
+        
+        if request.method == "POST":
+            return role in [
+                Membership.ROLE_OWNER,
+                Membership.ROLE_ADMIN,
+                # Membership.ROLE_MEMBER,  # optional
+            ]
+
+        if request.method in ["PUT", "PATCH"]:
+            if role in [Membership.ROLE_OWNER, Membership.ROLE_ADMIN]:
+                return True
+            
+            if role == Membership.ROLE_MEMBER:
+                # Members can only change status
+                allowed_fields = {"status"}
+                requested_fields = set(request.data.keys())
+                return requested_fields.issubset(allowed_fields)
+
+        return False

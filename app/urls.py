@@ -5,7 +5,8 @@ from .views import (
     PassworedUpdateAPI,
     OrganizationViewSetAPI,
     MembershipsViewSetAPI,
-    ProjectViewSetAPI
+    ProjectViewSetAPI,
+    TaskViewSetAPI
 )
 
 router = DefaultRouter()
@@ -14,6 +15,7 @@ router.register(r"password",PassworedUpdateAPI,basename="passwored")
 router.register(r"organization",OrganizationViewSetAPI,basename="organization")
 router.register(r"memberships",MembershipsViewSetAPI,basename="memberships")
 router.register(r"project",ProjectViewSetAPI,basename="project")
+router.register(r"task",TaskViewSetAPI,basename="task")
 
 urlpatterns = [
     path("", include(router.urls)),
