@@ -1,6 +1,7 @@
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
+from django.contrib.auth.models import User
 from django.http import Http404
 from rest_framework.decorators import action
 from .permissions import (
@@ -24,11 +25,13 @@ from .models import (
     Project,
     Task
 )
-from django.contrib.auth.models import User
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated, 
     IsAdminUser
+)
+from .filters import (
+    TaskFilter
 )
 
 class UserViewsetAPI(ModelViewSet):
@@ -239,7 +242,12 @@ class ProjectViewSetAPI(ModelViewSet):
     
 class TaskViewSetAPI(ModelViewSet):
     permission_classes = [TaskRolePermission]
-
+    filter_backends = TaskFilter
+    search_fields = [
+        "title",
+        "description",
+    ]
+    
     def get_queryset(self):
         user = self.request.user
 
