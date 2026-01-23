@@ -1,6 +1,12 @@
+from rest_framework.response import Response
+from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
-from .permissions import OrganizationRolePermission
+from django.http import Http404
 from rest_framework.decorators import action
+from .permissions import (
+    OrganizationRolePermission,
+    ProjectRolePermission
+)
 from .serializers import (
     UserSerializer,
     PassworedUpdateSerializer,
@@ -15,11 +21,12 @@ from .models import (
     Project,
     Task
 )
-from django.http import Http404
 from django.contrib.auth.models import User
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
-from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated, 
+    IsAdminUser
+)
 
 class UserViewsetAPI(ModelViewSet):
     permission_classes = [AllowAny]
@@ -204,7 +211,7 @@ class MembershipsViewSetAPI(ModelViewSet):
             "status": status.HTTP_200_OK
         })
 class ProjectViewSetAPI(ModelViewSet):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated, ProjectRolePermission]
     serializer_class = ProjectSerializer
     queryset = Project.objects.all()
 
