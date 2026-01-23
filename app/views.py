@@ -213,8 +213,17 @@ class MembershipsViewSetAPI(ModelViewSet):
 class ProjectViewSetAPI(ModelViewSet):
     permission_classes = [IsAuthenticated, ProjectRolePermission]
     serializer_class = ProjectSerializer
-    queryset = Project.objects.all()
 
+    def get_queryset(self):
+        user = self.request.user
+
+        if not user.is_authenticated:
+            return Project.objects.none()
+        
+        return Project.objects.filter(
+            organization__membership__user=user
+        ).distinct()
+    
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
